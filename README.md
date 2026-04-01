@@ -22,6 +22,11 @@ Built-in providers:
 require("ai-sidekick").setup({
   default_provider = "codex",
   mode = "internal",
+  window = {
+    type = "split",
+    position = "bottom",
+    size = 0.33,
+  },
   providers = {
     codex = {
       cmd = "codex",
@@ -59,6 +64,7 @@ require("ai-sidekick").setup({
 - Normal `<leader>aO` sends the current file as a relative reference like `lua/ai-sidekick/init.lua`.
 - Visual `<leader>ao` sends only a file reference with line range like `lua/ai-sidekick/init.lua:10-24`.
 - Internal mode starts the provider in a split and then prefills the text after a short delay without pressing Enter.
+- Internal mode can open either in a split or a floating window.
 - External mode launches a new terminal command and passes the prompt/reference through the provider CLI invocation.
 - `<leader>ax` resumes the provider session for providers that define resume behavior.
 
@@ -151,9 +157,37 @@ external = {
 The launcher must accept a final shell command string appended by the plugin. For Kitty remote control,
 the user must enable remote control in Kitty config.
 
+## Internal Window
+
+Internal mode supports both splits and floating windows.
+
+Split example:
+
+```lua
+window = {
+  type = "split",
+  position = "right", -- left | right | top | bottom
+  size = 0.4, -- ratio or absolute columns/lines
+}
+```
+
+Float example:
+
+```lua
+window = {
+  type = "float",
+  float = {
+    width = 0.8,  -- ratio or absolute columns
+    height = 0.8, -- ratio or absolute lines
+    border = "rounded",
+  },
+}
+```
+
 ## Notes
 
 - Relative paths are computed from the git root when `.git` exists, otherwise from the current working directory.
 - Internal mode does not send file contents. It only prepopulates the prompt/reference text and leaves submission to the user.
+- For backward compatibility, old `split = {...}` config is still accepted and mapped into `window`.
 - External mode is not terminal-agnostic for post-launch text injection. If you want to send text after launch, that needs terminal-specific remote control such as Kitty `send-text`.
 - Resume is provider-specific. If a provider does not define `resume_args`, resume will fail with an error.

@@ -12,9 +12,15 @@ M.defaults = {
     toggle_mode = "<leader>am",
     select_provider = "<leader>ap",
   },
-  split = {
+  window = {
+    type = "split",
     position = "bottom",
-    size = 15,
+    size = 0.33,
+    float = {
+      width = 0.8,
+      height = 0.8,
+      border = "rounded",
+    },
   },
   external = {
     launcher = { "kitty", "@", "launch", "--type=tab", "sh", "-lc" },
@@ -38,7 +44,13 @@ M.defaults = {
 
 function M.setup(user_config)
   local defaults = vim.deepcopy(M.defaults)
-  return vim.tbl_deep_extend("force", defaults, user_config or {})
+  local merged = vim.tbl_deep_extend("force", defaults, user_config or {})
+
+  if user_config and user_config.split and not user_config.window then
+    merged.window = vim.tbl_deep_extend("force", defaults.window, user_config.split)
+  end
+
+  return merged
 end
 
 return M

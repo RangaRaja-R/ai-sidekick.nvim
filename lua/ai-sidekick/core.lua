@@ -106,7 +106,7 @@ local function visual_range()
 end
 
 local function split_command(config)
-  local position = config.split.position
+  local position = config.window.position
 
   if position == "top" then
     return "topleft split"
@@ -123,9 +123,24 @@ local function split_command(config)
   return "botright split"
 end
 
+local function split_size(config)
+  local position = config.window.position
+  local size = config.window.size
+
+  if size > 0 and size < 1 then
+    if position == "left" or position == "right" then
+      return math.max(1, math.floor(vim.o.columns * size))
+    end
+
+    return math.max(1, math.floor(vim.o.lines * size))
+  end
+
+  return math.max(1, math.floor(size))
+end
+
 local function apply_split_size(win, config)
-  local position = config.split.position
-  local size = config.split.size
+  local position = config.window.position
+  local size = split_size(config)
 
   if position == "left" or position == "right" then
     vim.api.nvim_win_set_width(win, size)
@@ -135,9 +150,45 @@ local function apply_split_size(win, config)
   vim.api.nvim_win_set_height(win, size)
 end
 
+local function float_config(config)
+  local float = config.window.float or {}
+  local width = float.width or 0.8
+  local height = float.height or 0.8
+
+  if width > 0 and width <= 1 then
+    width = math.floor(vim.o.columns * width)
+  end
+
+  if height > 0 and height <= 1 then
+    height = math.floor(vim.o.lines * height)
+  end
+
+  width = math.min(vim.o.columns, math.max(1, math.floor(width)))
+  height = math.min(vim.o.lines - 2, math.max(1, math.floor(height)))
+
+  return {
+    relative = "editor",
+    style = "minimal",
+    border = float.border or "rounded",
+    width = width,
+    height = height,
+    row = math.max(0, math.floor((vim.o.lines - height) / 2) - 1),
+    col = math.max(0, math.floor((vim.o.columns - width) / 2)),
+  }
+end
+
 local function ensure_internal_window(config)
   if win_is_valid(state.terminal.win) then
     vim.api.nvim_set_current_win(state.terminal.win)
+    return state.terminal.win
+  end
+
+  if config.window.type == "float" then
+    state.terminal.win = vim.api.nvim_open_win(
+      buf_is_valid(state.terminal.buf) and state.terminal.buf or vim.api.nvim_create_buf(false, true),
+      true,
+      float_config(config)
+    )
     return state.terminal.win
   end
 
