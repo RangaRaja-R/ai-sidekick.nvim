@@ -5,11 +5,12 @@ M.defaults = {
   current_provider = nil,
   mode = "internal",
   keymaps = {
-    open = "<leader>ao",
-    open_internal = "<leader>ai",
-    open_with_file = "<leader>aO",
-    resume = "<leader>ax",
-    toggle_mode = "<leader>am",
+    open = "<leader>ai",
+    open_internal = "<leader>a/",
+    open_with_file = "<leader>ao",
+    new_chat = "<leader>an",
+    list_chats = "<leader>al",
+    toggle_mode = "<leader>ax",
     select_provider = "<leader>ap",
   },
   window = {
@@ -23,7 +24,12 @@ M.defaults = {
     },
   },
   external = {
-    launcher = { "kitty", "@", "launch", "--type=tab", "sh", "-lc" },
+    provider = "kitty",
+    send_delay_ms = 500,
+    send_enter = false,
+    providers = {
+      kitty = {},
+    },
   },
   providers = {
     codex = {},

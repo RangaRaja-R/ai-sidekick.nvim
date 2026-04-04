@@ -1,8 +1,8 @@
 local M = {}
 
 local builtin = {
-  codex = require("ai-sidekick.providers.codex"),
-  cursor = require("ai-sidekick.providers.cursor"),
+  codex = require("ai-sidekick.providers.AI.codex"),
+  cursor = require("ai-sidekick.providers.AI.cursor"),
 }
 
 function M.resolve(config, name)
