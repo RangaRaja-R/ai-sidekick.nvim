@@ -1,9 +1,9 @@
-# ai-sidekick.nvim (WIP)
+# ai-sidekick.nvim
 
 A minimal Neovim plugin for AI CLIs with two execution modes:
 
 - `internal`: run quick tasks in a split inside Neovim
-- `external`(WIP): open a new terminal outside Neovim for deeper work
+- `external`: open a new terminal outside Neovim for deeper work
 
 The plugin keeps context intentionally small. It only sends relative file references like `src/main.rs`
 or `src/main.rs:4-10`. It does not send buffer contents.
@@ -98,6 +98,7 @@ Shortcut prompts are config-driven. Each key under `shortcuts` creates:
 - a normal-mode mapping at `<leader>a{key}`
 - a command form `:AI {key}`
 - when `mode` is omitted on a shortcut, it uses the current global plugin mode
+- shortcut `mode` supports: `internal`, `external`, or `temporary`
 
 Example:
 
@@ -114,6 +115,11 @@ require("ai-sidekick").setup({
       mode = "external",
       desc = "Deep design review",
     },
+    t = {
+      prompt = "Summarize this issue in 3 bullets.",
+      mode = "temporary",
+      desc = "Temporary one-shot",
+    },
   },
 })
 ```
@@ -122,6 +128,7 @@ This gives you:
 
 - `<leader>ar` and `:AI r`
 - `<leader>ad` and `:AI d`
+- `<leader>at` and `:AI t`
 
 ## Provider Shape
 
@@ -133,6 +140,7 @@ providers = {
     cmd = "codex",
     args = {},
     prompt_arg = nil,
+    temporary_args = { "exec", "--ephemeral" },
     resume_args = { "resume", "--last" },
     list_args = { "resume" },
   },
@@ -140,6 +148,7 @@ providers = {
     cmd = "cursor",
     args = { "agent" },
     prompt_arg = nil,
+    temporary_args = { "agent", "-p" },
     resume_args = { "agent", "resume" },
     list_args = { "agent", "ls" },
   },
@@ -149,6 +158,7 @@ providers = {
 - `cmd`: executable name
 - `args`: extra base arguments
 - `prompt_arg`: optional flag used before the prompt in external mode
+- `temporary_args`: one-shot / non-resume invocation used when mode is `temporary`
 - `resume_args`: optional arguments used by `<leader>ai` / `:AISidekickResume`
 - `list_args`: optional arguments used by `<leader>al` / `:AISidekickListChats`
 

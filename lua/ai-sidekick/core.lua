@@ -258,6 +258,16 @@ local function build_base_argv(config, opts)
 	local _, provider = providers.resolve(config, opts.provider)
 	local argv
 
+	if opts.action == "temporary" then
+		if not provider.temporary_args or vim.tbl_isempty(provider.temporary_args) then
+			error("ai-sidekick: provider does not define temporary_args")
+		end
+
+		argv = { provider.cmd }
+		vim.list_extend(argv, provider.temporary_args)
+		return argv
+	end
+
 	if opts.action == "list" then
 		if not provider.list_args or vim.tbl_isempty(provider.list_args) then
 			error("ai-sidekick: provider does not define list_args")
@@ -304,7 +314,7 @@ local function build_external_argv(config, opts)
 end
 
 local function can_send_external_text(config, opts)
-	return opts.prompt and opts.prompt ~= ""
+	return opts.prompt and opts.prompt ~= "" and opts.action ~= "temporary"
 end
 
 function M.current_file_context()
@@ -346,6 +356,11 @@ function M.open_internal(config, opts)
 		vim.api.nvim_win_set_buf(win, state.terminal.buf)
 		vim.api.nvim_set_current_win(win)
 		vim.cmd("startinsert")
+		return
+	end
+
+	if opts.action == "temporary" then
+		open_internal_terminal(config, root, build_external_argv(config, opts), nil)
 		return
 	end
 
@@ -405,6 +420,12 @@ function M.open(config, opts)
 	opts = opts or {}
 
 	local mode = opts.mode or config.mode
+
+	if mode == "temporary" then
+		opts.action = opts.action or "temporary"
+		opts.new_chat = true
+		return M.open_internal(config, opts)
+	end
 
 	if mode == "external" then
 		return M.open_external(config, opts)

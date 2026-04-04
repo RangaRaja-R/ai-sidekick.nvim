@@ -1,6 +1,7 @@
 return {
-  cmd = "cursor",
-  args = { "agent" },
-  resume_args = { "agent", "resume" },
-  list_args = { "agent", "ls" },
+	cmd = "cursor-agent",
+	args = {},
+	temporary_args = { "-p" },
+	resume_args = { "resume" },
+	list_args = { "ls" },
 }
