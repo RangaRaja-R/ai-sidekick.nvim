@@ -1,9 +1,9 @@
-# ai-sidekick.nvim
+# ai-sidekick.nvim (WIP)
 
 A minimal Neovim plugin for AI CLIs with two execution modes:
 
 - `internal`: run quick tasks in a split inside Neovim
-- `external`: open a new terminal outside Neovim for deeper work
+- `external`(WIP): open a new terminal outside Neovim for deeper work
 
 The plugin keeps context intentionally small. It only sends relative file references like `src/main.rs`
 or `src/main.rs:4-10`. It does not send buffer contents.
