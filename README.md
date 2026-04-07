@@ -179,6 +179,13 @@ external = {
 
 External terminal behavior is provided by `providers/terminal/<provider>.lua`. The default provider is
 `kitty`, which opens/focuses a persistent tab and sends text through Kitty remote control commands.
+When reopening in the same project, ai-sidekick tries to reattach to an existing Kitty tab before launching a new one.
+
+Kitty reattach order:
+- Prefer tabs/windows tagged with `AI_SIDEKICK_ROOT=<project_root>` (set on launch via `kitty @ launch --var`).
+- Fallback for older tabs: match project root (`foreground_processes[].cwd` or `window.cwd`) and an AI process
+  command line that matches the current provider command.
+- For multiple matches, prefer titles containing `ai-sidekick`, then active tabs, then newer windows.
 
 You can also pass a custom provider table directly:
 

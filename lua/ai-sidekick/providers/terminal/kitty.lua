@@ -16,8 +16,48 @@ local state = {
   tab_id = nil,
 }
 
+local ROOT_USER_VAR = "AI_SIDEKICK_ROOT"
+
 local function clone_argv(argv)
   return vim.deepcopy(argv)
+end
+
+local function normalize_path(path)
+  if type(path) ~= "string" or path == "" then
+    return nil
+  end
+
+  return path:gsub("\\", "/"):gsub("/+$", "")
+end
+
+local function normalize_exec(arg)
+  if type(arg) ~= "string" or arg == "" then
+    return nil
+  end
+
+  local normalized = arg:gsub("\\", "/")
+  local leaf = normalized:match("([^/]+)$")
+  return leaf or normalized
+end
+
+local function cmdline_matches_provider(cmdline, provider_cmd)
+  if type(cmdline) ~= "table" or type(provider_cmd) ~= "string" or provider_cmd == "" then
+    return false
+  end
+
+  local provider_exec = normalize_exec(provider_cmd)
+  if not provider_exec then
+    return false
+  end
+
+  for _, arg in ipairs(cmdline) do
+    local arg_exec = normalize_exec(arg)
+    if arg_exec and (arg_exec == provider_exec or arg == provider_cmd) then
+      return true
+    end
+  end
+
+  return false
 end
 
 local function command(cfg, key, extra)
@@ -98,6 +138,111 @@ local function refresh_state(cfg)
   return true
 end
 
+local function title_has_sidekick(tab, win)
+  local tab_title = string.lower(tab and tab.title or "")
+  local win_title = string.lower(win and win.title or "")
+  return tab_title:find("ai%-sidekick", 1, false) ~= nil or win_title:find("ai%-sidekick", 1, false) ~= nil
+end
+
+local function build_candidates(data, root, provider_cmd)
+  local normalized_root = normalize_path(root)
+  if not normalized_root then
+    return {}
+  end
+
+  local candidates = {}
+
+  for _, os_window in ipairs(data or {}) do
+    for _, tab in ipairs(os_window.tabs or {}) do
+      for _, win in ipairs(tab.windows or {}) do
+        local user_vars = win.user_vars or {}
+        local user_var_root = normalize_path(user_vars[ROOT_USER_VAR])
+        local title_boost = title_has_sidekick(tab, win) and 1 or 0
+
+        if user_var_root and user_var_root == normalized_root then
+          table.insert(candidates, {
+            window_id = win.id,
+            tab_id = tab.id,
+            title_boost = title_boost,
+            tab_active = tab.is_active and 1 or 0,
+            created_at = tonumber(win.created_at) or 0,
+            rank = 2,
+          })
+        else
+          local process_root_match = false
+          local process_matches_provider = false
+
+          for _, proc in ipairs(win.foreground_processes or {}) do
+            local process_root = normalize_path(proc.cwd)
+            if process_root and process_root == normalized_root then
+              process_root_match = true
+              if cmdline_matches_provider(proc.cmdline, provider_cmd) then
+                process_matches_provider = true
+                break
+              end
+            end
+          end
+
+          local window_root_match = normalize_path(win.cwd) == normalized_root
+          if (process_root_match or window_root_match) and process_matches_provider then
+            table.insert(candidates, {
+              window_id = win.id,
+              tab_id = tab.id,
+              title_boost = title_boost,
+              tab_active = tab.is_active and 1 or 0,
+              created_at = tonumber(win.created_at) or 0,
+              rank = 1,
+            })
+          end
+        end
+      end
+    end
+  end
+
+  return candidates
+end
+
+local function choose_candidate(candidates)
+  local best = nil
+  for _, candidate in ipairs(candidates or {}) do
+    if not best
+      or candidate.rank > best.rank
+      or (candidate.rank == best.rank and candidate.title_boost > best.title_boost)
+      or (candidate.rank == best.rank and candidate.title_boost == best.title_boost and candidate.tab_active > best.tab_active)
+      or (
+        candidate.rank == best.rank
+        and candidate.title_boost == best.title_boost
+        and candidate.tab_active == best.tab_active
+        and candidate.created_at > best.created_at
+      )
+    then
+      best = candidate
+    end
+  end
+
+  return best
+end
+
+local function recover_existing(cfg, opts)
+  local data = list_data(cfg)
+  if not data then
+    return false
+  end
+
+  local candidate = choose_candidate(build_candidates(data, opts.root, opts.provider_cmd))
+  if not candidate then
+    return false
+  end
+
+  state.window_id = candidate.window_id
+  state.tab_id = candidate.tab_id
+  local focus_argv = command(cfg, "focus_tab", "id:" .. tostring(state.tab_id))
+  if focus_argv then
+    vim.fn.system(focus_argv)
+  end
+  return true
+end
+
 local function extract_window_id(output)
   if type(output) ~= "string" then
     return nil
@@ -130,6 +275,10 @@ function M.ensure_open(cfg, opts)
     return true
   end
 
+  if not opts.force_new and recover_existing(cfg, opts) then
+    return true
+  end
+
   local launch_argv = command(cfg, "launch")
   if not launch_argv then
     return false, "ai-sidekick: external launch command is not configured"
@@ -137,6 +286,7 @@ function M.ensure_open(cfg, opts)
 
   if opts.root and opts.root ~= "" then
     vim.list_extend(launch_argv, { "--cwd", opts.root })
+    vim.list_extend(launch_argv, { "--var", ROOT_USER_VAR .. "=" .. opts.root })
   end
 
   if cfg.title and cfg.title ~= "" then

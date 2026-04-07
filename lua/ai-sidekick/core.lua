@@ -376,6 +376,12 @@ function M.open_external(config, opts)
 		return
 	end
 
+	local ok_provider, provider_name, provider = pcall(providers.resolve, config, opts.provider)
+	if not ok_provider then
+		vim.notify(provider_name, vim.log.levels.ERROR)
+		return
+	end
+
 	local force_new_external = opts.force_new_external or opts.new_chat or opts.action == "list"
 	local use_external_send = can_send_external_text(config, opts)
 	local argv_builder = use_external_send and build_base_argv or build_external_argv
@@ -397,6 +403,8 @@ function M.open_external(config, opts)
 	local shell_command = string.format("cd %s && exec %s", vim.fn.shellescape(root), shell_join(argv))
 	local ok_open, open_err = terminal_provider.ensure_open(terminal_config, {
 		root = root,
+		provider = provider_name,
+		provider_cmd = provider.cmd,
 		shell_command = shell_command,
 		force_new = force_new_external,
 	})
