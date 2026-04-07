@@ -90,10 +90,22 @@ local function current_file_reference()
 end
 
 local function visual_range()
-	local start_pos = vim.fn.getpos("'<")
-	local end_pos = vim.fn.getpos("'>")
-	local start_line = start_pos[2]
-	local end_line = end_pos[2]
+	local mode = vim.fn.mode(1)
+	local start_line
+	local end_line
+
+	-- In active visual mode, prefer live positions to avoid stale '< and '> marks.
+	if mode:find("[vV\22]") then
+		local anchor_pos = vim.fn.getpos("v")
+		local cursor_pos = vim.fn.getpos(".")
+		start_line = anchor_pos[2]
+		end_line = cursor_pos[2]
+	else
+		local start_pos = vim.fn.getpos("'<")
+		local end_pos = vim.fn.getpos("'>")
+		start_line = start_pos[2]
+		end_line = end_pos[2]
+	end
 
 	if start_line == 0 or end_line == 0 then
 		return nil
