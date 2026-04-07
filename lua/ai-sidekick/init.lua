@@ -140,6 +140,14 @@ local function register_keymaps()
 		M.open_with_file()
 	end, { silent = true, desc = "Open AI helper with current file reference" })
 
+	vim.keymap.set("n", cfg.keymaps.copy_reference, function()
+		M.copy_reference()
+	end, { silent = true, desc = "Copy current file reference" })
+
+	vim.keymap.set("x", cfg.keymaps.copy_reference, function()
+		M.copy_reference({ visual = true })
+	end, { silent = true, desc = "Copy selected range reference" })
+
 	vim.keymap.set("n", cfg.keymaps.new_chat, function()
 		M.new_chat()
 	end, { silent = true, desc = "Open a new AI chat" })
@@ -228,6 +236,29 @@ function M.open_visual(opts)
 		reference = reference,
 		root = root,
 	})
+end
+
+function M.copy_reference(opts)
+	opts = opts or {}
+
+	local reference
+	if opts.visual then
+		reference = core.visual_context()
+	else
+		reference = core.current_file_context()
+	end
+
+	if not reference then
+		notify("ai-sidekick: current buffer has no file path", vim.log.levels.WARN)
+		return
+	end
+
+	local ok = pcall(vim.fn.setreg, "+", reference)
+	if not ok then
+		vim.fn.setreg('"', reference)
+	end
+
+	notify("ai-sidekick: copied reference: " .. reference)
 end
 
 function M.ask(opts)
