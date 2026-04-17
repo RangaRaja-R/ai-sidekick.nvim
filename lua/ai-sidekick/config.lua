@@ -35,18 +35,7 @@ M.defaults = {
 	providers = {
 		codex = {},
 	},
-	shortcuts = {
-		r = {
-			prompt = "Review the staged changes for bugs, mistakes, and irrelevant changes.",
-			mode = "temporary",
-			desc = "Review staged changes",
-		},
-		c = {
-			prompt = "Generate a concise commit message for the staged changes.",
-			mode = "temporary",
-			desc = "Generate commit message",
-		},
-	},
+	shortcuts = {},
 }
 
 function M.setup(user_config)
