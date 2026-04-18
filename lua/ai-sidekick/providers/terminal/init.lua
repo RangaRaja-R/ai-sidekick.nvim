@@ -39,11 +39,8 @@ end
 function M.resolve(config, name)
   local spec = name or config.external.provider
 
-  if type(spec) == "table" then
-    local provider = builtin.kitty
-    local merged = vim.deepcopy(spec)
-    validate_config("custom", merged)
-    return "custom", provider, merged
+  if type(spec) ~= "string" or spec == "" then
+    error("ai-sidekick: external.provider must be a provider name string")
   end
 
   local provider_name = spec
@@ -53,11 +50,7 @@ function M.resolve(config, name)
     error(string.format("ai-sidekick: unknown external provider '%s'", tostring(provider_name)))
   end
 
-  local merged = vim.tbl_deep_extend(
-    "force",
-    provider.defaults or {},
-    ((config.external.providers or {})[provider_name]) or {}
-  )
+  local merged = vim.deepcopy(provider.defaults or {})
 
   validate_config(provider_name, merged)
 

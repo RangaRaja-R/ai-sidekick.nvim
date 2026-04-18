@@ -28,9 +28,6 @@ M.defaults = {
 		provider = "kitty",
 		send_delay_ms = 500,
 		send_enter = false,
-		providers = {
-			kitty = {},
-		},
 	},
 	providers = {
 		codex = {},
@@ -41,10 +38,6 @@ M.defaults = {
 function M.setup(user_config)
 	local defaults = vim.deepcopy(M.defaults)
 	local merged = vim.tbl_deep_extend("force", defaults, user_config or {})
-
-	if user_config and user_config.split and not user_config.window then
-		merged.window = vim.tbl_deep_extend("force", defaults.window, user_config.split)
-	end
 
 	return merged
 end
