@@ -3,6 +3,7 @@ local M = {}
 local builtin = {
   codex = require("ai-sidekick.providers.AI.codex"),
   cursor = require("ai-sidekick.providers.AI.cursor"),
+  opencode = require("ai-sidekick.providers.AI.opencode"),
 }
 
 function M.resolve(config, name)

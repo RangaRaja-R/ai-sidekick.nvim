@@ -299,8 +299,29 @@ end
 
 function M.list_chats(opts)
 	opts = opts or {}
+	local cfg = config()
+	local ok, provider_name, provider = pcall(providers.resolve, cfg, opts.provider)
 
-	core.open(config(), {
+	if not ok then
+		notify(provider_name, vim.log.levels.ERROR)
+		return
+	end
+
+	if provider.select_chat then
+		provider.select_chat(function(selection)
+			core.open(cfg, {
+				mode = opts.mode,
+				provider = provider_name,
+				root = vim.loop.cwd(),
+				provider_args = selection.args,
+				new_chat = true,
+				force_new_external = true,
+			})
+		end)
+		return
+	end
+
+	core.open(cfg, {
 		action = "list",
 		mode = opts.mode,
 		provider = opts.provider,

@@ -270,6 +270,12 @@ local function build_base_argv(config, opts)
 	local _, provider = providers.resolve(config, opts.provider)
 	local argv
 
+	if opts.provider_args and not vim.tbl_isempty(opts.provider_args) then
+		argv = { provider.cmd }
+		vim.list_extend(argv, opts.provider_args)
+		return argv
+	end
+
 	if opts.action == "temporary" then
 		if not provider.temporary_args or vim.tbl_isempty(provider.temporary_args) then
 			error("ai-sidekick: provider does not define temporary_args")

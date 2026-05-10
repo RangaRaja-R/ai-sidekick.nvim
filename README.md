@@ -166,14 +166,13 @@ providers = {
     resume_args = { "agent", "resume" },
     list_args = { "agent", "ls" },
   },
-  claude = {
-    cmd = "claude",
+  opencode = {
+    cmd = "opencode",
     args = {},
     prompt_arg = nil,
-    temporary_args = {},
-    resume_args = {},
-    list_args = {},
-  },
+    temporary_args = { "run" },
+    resume_args = { "--continue" },
+  }
 }
 ```
 
@@ -185,6 +184,8 @@ providers = {
 - `temporary_args`: args used by `temporary` mode
 - `resume_args`: args used by resume flow
 - `list_args`: args used by list chats flow
+
+Note: built-in `opencode` uses an interactive session picker instead of `list_args`.
 
 ## Requirements
 
