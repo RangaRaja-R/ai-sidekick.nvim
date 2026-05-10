@@ -85,6 +85,7 @@ This creates:
 | `<leader>ay` / n/a                         | normal | Copy current file reference                            |
 | `<leader>ay` / n/a                         | visual | Copy selected range reference                          |
 | `<leader>a/` / n/a                         | normal | Open AI in internal mode                               |
+| `<leader>at` / n/a                         | normal | Run a temporary AI prompt                              |
 | `<leader>an` / `:AISidekickNewChat`        | normal | Open a new chat                                        |
 | `<leader>al` / `:AISidekickListChats`      | normal | List chats / pick one (provider-specific)              |
 | `<leader>ax` / `:AISidekickToggleMode`     | normal | Toggle `internal` / `external`                         |

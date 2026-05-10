@@ -7,6 +7,7 @@ M.defaults = {
 	keymaps = {
 		open = "<leader>ai",
 		open_internal = "<leader>a/",
+		open_temporary = "<leader>at",
 		open_with_file = "<leader>ao",
 		copy_reference = "<leader>ay",
 		new_chat = "<leader>an",

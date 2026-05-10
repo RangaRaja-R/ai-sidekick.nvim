@@ -148,6 +148,10 @@ local function register_keymaps()
 		M.open_internal()
 	end, { silent = true, desc = "Open AI helper in internal split" })
 
+	set_keymap("n", cfg.keymaps.open_temporary, function()
+		M.ask({ mode = "temporary" })
+	end, { silent = true, desc = "Run a temporary AI prompt" })
+
 	set_keymap("n", cfg.keymaps.open_with_file, function()
 		M.open_with_file()
 	end, { silent = true, desc = "Open AI helper with current file reference" })
