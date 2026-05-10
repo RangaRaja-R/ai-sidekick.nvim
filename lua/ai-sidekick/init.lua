@@ -121,46 +121,58 @@ local function register_shortcut_keymaps()
 	end
 end
 
+local function set_keymap(mode, lhs, rhs, opts)
+	if not lhs or lhs == "" then
+		return
+	end
+
+	vim.keymap.set(mode, lhs, rhs, opts)
+end
+
 local function register_keymaps()
 	local cfg = config()
 
-	vim.keymap.set("n", cfg.keymaps.open, function()
+	if not cfg then
+		return
+	end
+
+	set_keymap("n", cfg.keymaps.open, function()
 		M.resume()
 	end, { silent = true, desc = "Open or resume AI helper" })
 
-	vim.keymap.set("x", cfg.keymaps.open, function()
+	set_keymap("x", cfg.keymaps.open, function()
 		M.open_visual({ action = "resume" })
 	end, { silent = true, desc = "Send selected range reference to resumed AI helper" })
 
-	vim.keymap.set("n", cfg.keymaps.open_internal, function()
+	set_keymap("n", cfg.keymaps.open_internal, function()
 		M.open_internal()
 	end, { silent = true, desc = "Open AI helper in internal split" })
 
-	vim.keymap.set("n", cfg.keymaps.open_with_file, function()
+	set_keymap("n", cfg.keymaps.open_with_file, function()
 		M.open_with_file()
 	end, { silent = true, desc = "Open AI helper with current file reference" })
 
-	vim.keymap.set("n", cfg.keymaps.copy_reference, function()
+	set_keymap("n", cfg.keymaps.copy_reference, function()
 		M.copy_reference()
 	end, { silent = true, desc = "Copy current file reference" })
 
-	vim.keymap.set("x", cfg.keymaps.copy_reference, function()
+	set_keymap("x", cfg.keymaps.copy_reference, function()
 		M.copy_reference({ visual = true })
 	end, { silent = true, desc = "Copy selected range reference" })
 
-	vim.keymap.set("n", cfg.keymaps.new_chat, function()
+	set_keymap("n", cfg.keymaps.new_chat, function()
 		M.new_chat()
 	end, { silent = true, desc = "Open a new AI chat" })
 
-	vim.keymap.set("n", cfg.keymaps.list_chats, function()
+	set_keymap("n", cfg.keymaps.list_chats, function()
 		M.list_chats()
 	end, { silent = true, desc = "List chats and pick one" })
 
-	vim.keymap.set("n", cfg.keymaps.toggle_mode, function()
+	set_keymap("n", cfg.keymaps.toggle_mode, function()
 		M.toggle_mode()
 	end, { silent = true, desc = "Toggle AI helper mode" })
 
-	vim.keymap.set("n", cfg.keymaps.select_provider, function()
+	set_keymap("n", cfg.keymaps.select_provider, function()
 		M.select_provider()
 	end, { silent = true, desc = "Select AI provider" })
 

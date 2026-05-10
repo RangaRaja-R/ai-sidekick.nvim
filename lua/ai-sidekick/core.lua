@@ -241,7 +241,7 @@ local function open_internal_terminal(config, root, argv, prefill)
 		end,
 	})
 
-	vim.keymap.set("t", "<Esc><Esc>", [[<C-\><C-n>:hide<CR>]], {
+	vim.keymap.set({ "t", "n" }, "<Esc><Esc>", [[<C-\><C-n>:hide<CR>]], {
 		buffer = state.terminal.buf,
 		silent = true,
 		desc = "Hide AI terminal",
