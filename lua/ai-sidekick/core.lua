@@ -43,22 +43,6 @@ local function shell_join(argv)
 	return table.concat(parts, " ")
 end
 
-local function workspace_root(file_path)
-	local start = file_path ~= "" and vim.fs.dirname(file_path) or vim.loop.cwd()
-	local git_dir = vim.fs.find(".git", {
-		upward = true,
-		path = start,
-		stop = vim.loop.os_homedir(),
-		limit = 1,
-	})[1]
-
-	if git_dir then
-		return vim.fs.dirname(git_dir)
-	end
-
-	return vim.loop.cwd()
-end
-
 local function relative_to_root(root, file_path)
 	local rel = vim.fn.fnamemodify(file_path, ":.")
 
@@ -77,7 +61,7 @@ local function relative_to_root(root, file_path)
 	return normalize_slashes(rel)
 end
 
-local function current_file_reference()
+local function current_file_reference(root)
 	local buf = vim.api.nvim_get_current_buf()
 	local file_path = vim.api.nvim_buf_get_name(buf)
 
@@ -85,7 +69,6 @@ local function current_file_reference()
 		return nil
 	end
 
-	local root = workspace_root(file_path)
 	return relative_to_root(root, file_path), root
 end
 
@@ -335,8 +318,9 @@ local function can_send_external_text(config, opts)
 	return opts.prompt and opts.prompt ~= "" and opts.action ~= "temporary"
 end
 
-function M.current_file_context()
-	local reference, root = current_file_reference()
+function M.current_file_context(root)
+	local reference
+	reference, root = current_file_reference(root)
 
 	if not reference then
 		return nil, root
@@ -345,8 +329,9 @@ function M.current_file_context()
 	return reference, root
 end
 
-function M.visual_context()
-	local reference, root = current_file_reference()
+function M.visual_context(root)
+	local reference
+	reference, root = current_file_reference(root)
 
 	if not reference then
 		return nil, root
@@ -362,7 +347,7 @@ function M.visual_context()
 end
 
 function M.open_internal(config, opts)
-	local root = opts.root or vim.loop.cwd()
+	local root = opts.root or config.workspace_root or vim.fn.getcwd()
 	local win = ensure_internal_window(config)
 
 	if
@@ -386,7 +371,7 @@ function M.open_internal(config, opts)
 end
 
 function M.open_external(config, opts)
-	local root = opts.root or vim.loop.cwd()
+	local root = opts.root or config.workspace_root or vim.fn.getcwd()
 	local ok_resolve, resolved_or_error, terminal_provider, terminal_config = pcall(terminal_providers.resolve, config)
 
 	if not ok_resolve then

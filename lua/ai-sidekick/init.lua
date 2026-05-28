@@ -13,6 +13,7 @@ local state = {
 local function config()
 	if not state.config then
 		state.config = config_module.setup()
+		state.config.workspace_root = vim.fn.getcwd()
 	end
 
 	return state.config
@@ -33,7 +34,7 @@ end
 local function open_with_reference(opts)
 	local cfg = config()
 	local reference = opts.reference
-	local root = opts.root or vim.loop.cwd()
+	local root = opts.root or cfg.workspace_root
 
 	core.open(cfg, {
 		action = opts.action,
@@ -185,19 +186,22 @@ end
 
 function M.setup(user_config)
 	state.config = config_module.setup(user_config)
+	state.config.workspace_root = vim.fn.getcwd()
 	register_commands()
 	register_keymaps()
 end
 
 function M.open(opts)
 	opts = opts or {}
-	core.open(config(), {
+	local cfg = config()
+
+	core.open(cfg, {
 		action = opts.action,
 		mode = opts.mode,
 		provider = opts.provider,
 		new_chat = opts.new_chat,
 		force_new_external = opts.force_new_external,
-		root = vim.loop.cwd(),
+		root = cfg.workspace_root,
 		prompt = opts.prompt,
 	})
 end
@@ -216,7 +220,8 @@ end
 
 function M.open_with_file(opts)
 	opts = opts or {}
-	local reference, root = core.current_file_context()
+	local cfg = config()
+	local reference, root = core.current_file_context(cfg.workspace_root)
 
 	if not reference then
 		notify("ai-sidekick: current buffer has no file path", vim.log.levels.WARN)
@@ -236,7 +241,8 @@ end
 
 function M.open_visual(opts)
 	opts = opts or {}
-	local reference, root = core.visual_context()
+	local cfg = config()
+	local reference, root = core.visual_context(cfg.workspace_root)
 
 	if not reference then
 		notify("ai-sidekick: visual context requires a file-backed buffer", vim.log.levels.WARN)
@@ -256,12 +262,13 @@ end
 
 function M.copy_reference(opts)
 	opts = opts or {}
+	local cfg = config()
 
 	local reference
 	if opts.visual then
-		reference = core.visual_context()
+		reference = core.visual_context(cfg.workspace_root)
 	else
-		reference = core.current_file_context()
+		reference = core.current_file_context(cfg.workspace_root)
 	end
 
 	if not reference then
@@ -279,12 +286,13 @@ end
 
 function M.ask(opts)
 	opts = opts or {}
+	local cfg = config()
 
 	ask_input("AI prompt: ", function(input)
-		core.open(config(), {
+		core.open(cfg, {
 			mode = opts.mode or "internal",
 			provider = opts.provider,
-			root = vim.loop.cwd(),
+			root = cfg.workspace_root,
 			prompt = input,
 		})
 	end)
@@ -292,22 +300,24 @@ end
 
 function M.resume(opts)
 	opts = opts or {}
+	local cfg = config()
 
-	core.open(config(), {
+	core.open(cfg, {
 		action = "resume",
 		mode = opts.mode,
 		provider = opts.provider,
-		root = vim.loop.cwd(),
+		root = cfg.workspace_root,
 	})
 end
 
 function M.new_chat(opts)
 	opts = opts or {}
+	local cfg = config()
 
-	core.open(config(), {
+	core.open(cfg, {
 		mode = opts.mode,
 		provider = opts.provider,
-		root = vim.loop.cwd(),
+		root = cfg.workspace_root,
 		new_chat = true,
 		force_new_external = true,
 	})
@@ -328,7 +338,7 @@ function M.list_chats(opts)
 			core.open(cfg, {
 				mode = opts.mode,
 				provider = provider_name,
-				root = vim.loop.cwd(),
+				root = cfg.workspace_root,
 				provider_args = selection.args,
 				new_chat = true,
 				force_new_external = true,
@@ -341,7 +351,7 @@ function M.list_chats(opts)
 		action = "list",
 		mode = opts.mode,
 		provider = opts.provider,
-		root = vim.loop.cwd(),
+		root = cfg.workspace_root,
 		new_chat = true,
 		force_new_external = true,
 	})
@@ -349,6 +359,7 @@ end
 
 function M.run_shortcut(key, opts)
 	opts = opts or {}
+	local cfg = config()
 	local shortcut = shortcut_config(key)
 
 	if not shortcut then
@@ -356,10 +367,10 @@ function M.run_shortcut(key, opts)
 		return
 	end
 
-	core.open(config(), {
-		mode = opts.mode or shortcut.mode or config().mode or "internal",
+	core.open(cfg, {
+		mode = opts.mode or shortcut.mode or cfg.mode or "internal",
 		provider = opts.provider or shortcut.provider,
-		root = vim.loop.cwd(),
+		root = cfg.workspace_root,
 		prompt = shortcut.prompt,
 	})
 end
