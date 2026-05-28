@@ -47,12 +47,82 @@ local function open_with_reference(opts)
 	})
 end
 
-local function ask_input(prompt, callback)
-	vim.ui.input({ prompt = prompt }, function(input)
-		if input and input ~= "" then
+local function ask_input(prompt, callback, opts)
+	opts = opts or {}
+	vim.ui.input({ prompt = prompt, default = opts.default or "" }, function(input)
+		if input ~= nil and (input ~= "" or opts.allow_empty) then
 			callback(input)
 		end
 	end)
+end
+
+local function parse_placeholder(placeholder)
+	local key, default = placeholder:match("^([^=]+)=(.*)$")
+
+	if key then
+		return key, default
+	end
+
+	if placeholder ~= "" then
+		return placeholder, ""
+	end
+
+	return nil, nil
+end
+
+local function prompt_placeholders(prompt, callback)
+	prompt = prompt or ""
+
+	local placeholders = {}
+	local seen = {}
+
+	for placeholder in prompt:gmatch("{(.-)}") do
+		local key, default = parse_placeholder(placeholder)
+
+		if key and not seen[key] then
+			seen[key] = true
+			table.insert(placeholders, {
+				key = key,
+				default = default,
+				value = nil,
+			})
+		end
+	end
+
+	if #placeholders == 0 then
+		callback(prompt)
+		return
+	end
+
+	local function ask_placeholders(index)
+		if index > #placeholders then
+			local values = {}
+
+			for _, placeholder in ipairs(placeholders) do
+				values[placeholder.key] = placeholder.value ~= "" and placeholder.value or placeholder.default
+			end
+
+			local result = prompt:gsub("{(.-)}", function(placeholder)
+				local key = parse_placeholder(placeholder)
+				if key and values[key] ~= nil then
+					return values[key]
+				end
+
+				return "{" .. placeholder .. "}"
+			end)
+
+			callback(result)
+			return
+		end
+
+		local placeholder = placeholders[index]
+		ask_input(placeholder.key .. ": ", function(input)
+			placeholder.value = input
+			ask_placeholders(index + 1)
+		end, { default = placeholder.default, allow_empty = true })
+	end
+
+	ask_placeholders(1)
 end
 
 local function register_commands()
@@ -360,19 +430,37 @@ end
 function M.run_shortcut(key, opts)
 	opts = opts or {}
 	local cfg = config()
-	local shortcut = shortcut_config(key)
 
-	if not shortcut then
+	local given_shortcut = shortcut_config(key)
+
+	if not given_shortcut then
 		notify("ai-sidekick: unknown shortcut '" .. key .. "'", vim.log.levels.ERROR)
 		return
 	end
 
-	core.open(cfg, {
-		mode = opts.mode or shortcut.mode or cfg.mode or "internal",
-		provider = opts.provider or shortcut.provider,
-		root = cfg.workspace_root,
-		prompt = shortcut.prompt,
-	})
+	local shortcut
+
+	if type(given_shortcut) == "string" then
+		shortcut = {
+			prompt = given_shortcut,
+		}
+	else
+		shortcut = vim.tbl_extend("force", {}, given_shortcut)
+	end
+
+	shortcut = vim.tbl_extend("force", {
+		mode = cfg.mode or "internal",
+		provider = nil,
+	}, shortcut, opts)
+
+	prompt_placeholders(shortcut.prompt, function(prompt)
+		core.open(cfg, {
+			mode = shortcut.mode,
+			provider = shortcut.provider,
+			root = cfg.workspace_root,
+			prompt = prompt,
+		})
+	end)
 end
 
 function M.toggle_mode()
