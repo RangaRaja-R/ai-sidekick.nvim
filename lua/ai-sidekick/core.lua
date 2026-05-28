@@ -326,7 +326,7 @@ function M.current_file_context(root)
 		return nil, root
 	end
 
-	return reference, root
+	return "@" .. reference, root
 end
 
 function M.visual_context(root)
@@ -340,10 +340,14 @@ function M.visual_context(root)
 	local start_line, end_line = visual_range()
 
 	if not start_line then
-		return reference, root
+		return "@" .. reference, root
 	end
 
-	return string.format("%s:%d-%d", reference, start_line, end_line), root
+	if start_line == end_line then
+		return string.format("@%s#L%d", reference, end_line), root
+	end
+
+	return string.format("@%s#L%d-%d", reference, start_line, end_line), root
 end
 
 function M.open_internal(config, opts)
